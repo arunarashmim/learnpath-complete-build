@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://learnpath-backend-smoky.vercel.app/api/:path*"
+    }
+  ]
+}

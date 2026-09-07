@@ -1,0 +1,1 @@
+import mongoose from 'mongoose'; export default mongoose.model('Student',new mongoose.Schema({name:String,classId:String,grade:Number,reading:String,arithmetic:String,readingScore:Number,readingMax:Number,arithmeticScore:Number,arithmeticMax:Number},{timestamps:true}));

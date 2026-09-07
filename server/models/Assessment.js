@@ -1,0 +1,1 @@
+import mongoose from 'mongoose'; export default mongoose.model('Assessment',new mongoose.Schema({studentId:String,subject:String,score:Number,max:Number,level:String,type:{type:String,default:'baseline'},date:String,runId:String},{timestamps:true}));

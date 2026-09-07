@@ -1,0 +1,1 @@
+import mongoose from 'mongoose'; export default mongoose.model('Intervention',new mongoose.Schema({title:String,subject:String,from:String,to:String,duration:Number,steps:[String],approved:Boolean},{timestamps:true}));

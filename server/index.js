@@ -17,41 +17,65 @@ const mongoUri =
   'mongodb://127.0.0.1:27017/learnpath'
 
 let mongo = false
+let mongoError = null
+let mongoPromise = null
 
-// Create one shared connection promise.
-// This prevents Vercel requests from reaching the API
-// before MongoDB has finished connecting.
-const mongoConnection = mongoose
-  .connect(mongoUri)
-  .then(() => {
+async function connectMongo() {
+  if (mongoose.connection.readyState === 1) {
     mongo = true
-    console.log('MongoDB connected successfully')
-  })
-  .catch((err) => {
-    mongo = false
-    console.log(
-      'MongoDB unavailable — using demo mode:',
-      err.message
-    )
-  })
-
-// Wait for the MongoDB connection before handling API requests.
-// This is especially important on Vercel/serverless cold starts.
-app.use(async (req, res, next) => {
-  try {
-    await mongoConnection
-  } catch {
-    // If MongoDB is unavailable, continue in demo mode.
+    mongoError = null
+    return true
   }
 
+  if (mongoPromise) {
+    return mongoPromise
+  }
+
+  mongoPromise = mongoose
+    .connect(mongoUri, {
+      family: 4,
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 15000,
+      maxIdleTimeMS: 60000
+    })
+    .then(() => {
+      mongo = true
+      mongoError = null
+      console.log('MongoDB connected successfully')
+      return true
+    })
+    .catch((err) => {
+      mongo = false
+      mongoError = err
+
+      console.error('MongoDB connection failed')
+      console.error('Name:', err?.name)
+      console.error('Message:', err?.message)
+      console.error('Code:', err?.code || 'none')
+
+      mongoPromise = null
+
+      return false
+    })
+
+  return mongoPromise
+}
+
+app.use(async (req, res, next) => {
+  await connectMongo()
   next()
 })
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  const connected = await connectMongo()
+
   res.json({
     ok: true,
-    mongodb: mongo,
-    mode: mongo ? 'mongodb' : 'demo'
+    mongodb: connected,
+    mode: connected ? 'mongodb' : 'demo',
+    error: connected
+      ? null
+      : mongoError?.name || 'MongoDB connection failed'
   })
 })
 
